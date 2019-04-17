@@ -1,24 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
-project(ggcapture VERSION 1.0)
+project(ggcapture_example)
 find_package(X11 REQUIRED)
 
-option(build_example "build examples?" ON)
-
-add_subdirectory(deps/screen_capture_lite)
-include_directories(include)
-
-file(GLOB SOURCES src/*.cc)
-file(GLOB HEADERS include/*.h)
-
-add_library(${PROJECT_NAME} STATIC ${SOURCES})
-
-
-install (TARGETS ${PROJECT_NAME}  
-	RUNTIME DESTINATION bin
-	ARCHIVE DESTINATION lib
-	LIBRARY DESTINATION lib
-)
-install(FILES ${HEADERS} DESTINATION include/${PROJECT_NAME})
+add_executable(${PROJECT_NAME} main.cc)
 
 target_link_directories(
     ${PROJECT_NAME}
@@ -27,12 +11,10 @@ target_link_directories(
 target_include_directories(
     ${PROJECT_NAME} 
     PUBLIC 
-        deps/screen_capture_lite/include
-        deps/CImg-2.5.6
 )
 target_link_libraries(
     ${PROJECT_NAME} 
-    screen_capture_lite 
+	ggcapture
 )
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
@@ -68,9 +50,6 @@ if(APPLE)
         "-framework AVFoundation"
         "-framework AppKit"
     )
-    target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
+    target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 endif(APPLE)
 
-if(build_example)
-	add_subdirectory(example)
-endif(build_example)

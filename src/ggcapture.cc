@@ -1,5 +1,7 @@
 #include "ggcapture.h"
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 
 using namespace ggcapture;
 using namespace std;
@@ -7,6 +9,7 @@ using namespace cimg_library;
 using namespace filesystem;
 using namespace SL;
 using namespace SL::Screen_Capture;
+using namespace chrono;
 
 void GGCapture::setCaptureMode(GGCapture::CaptureMethod mode)
 {
@@ -18,8 +21,9 @@ void GGCapture::setCaptureFps(int fps)
 	m_capture_fps = fps;
 }
 
-void GGCapture::updateWindowPosition()
+void GGCapture::updateWindow()
 {
+	assert(this_thread::get_id() == m_capture_thread_id);
 	RECT rect = { 0 };
 	bool succeed = GetWindowRect(reinterpret_cast<HWND>(m_window.Handle), &rect);
 	if (! succeed) {
@@ -38,7 +42,8 @@ void GGCapture::initCaptureConfig()
 		m_capture_config = SL::Screen_Capture::CreateCaptureConfiguration([]() {
 			return SL::Screen_Capture::GetMonitors();
 		})->onNewFrame([&](const SL::Screen_Capture::Image& img, auto window) {
-			updateWindowPosition();
+			m_capture_thread_id = this_thread::get_id();
+			updateWindow();
 			int offset_x = Screen_Capture::OffsetX(m_window);
 			int offset_y = Screen_Capture::OffsetY(m_window);
 			int size_x = Screen_Capture::Width(m_window);
@@ -79,12 +84,23 @@ void GGCapture::initCaptureConfig()
 
 void GGCapture::newFrameArrived(shared_ptr<CImg<unsigned char>> frame)
 {
+	/* on capturing thread */
 	if (frame->is_empty()) {
 		return;
 	}
 	if (m_show_frame_flag) {
 		m_image_display.show();
 		m_show_frame_flag = false;
+	}
+	if (m_save_frame_flag) {
+		char s[30];
+		time_t now = std::time(nullptr);
+		std::strftime(s, sizeof(s), "%Y-%m-%d-%H-%M-%S", std::localtime(&now));
+		filesystem::create_directory(m_storage_path);
+		filesystem::path filepath = m_storage_path;
+		filepath /= string(s) + ".bmp";
+		frame->save(filepath.string().c_str());
+		m_save_frame_flag = false;
 	}
 	m_image_display.resize(frame->width(), frame->height());
 	m_image_display.display(*frame);
@@ -104,8 +120,12 @@ void GGCapture::setWindowTitle(string srchterm)
 			cout << "found: " << name << endl;
 			m_window = a;
 			m_window_title = name;
-			break;
+			return;
 		}
+	}
+	cout << "window not found, existing windows are:" << endl;
+	for (auto& a : windows) {
+		cout << a.Name << endl;
 	}
 }
 
@@ -133,4 +153,14 @@ void GGCapture::showFrame()
 void GGCapture::setStoragePath(filesystem::path path)
 {
 	m_storage_path = path;
+}
+
+void GGCapture::saveFrame()
+{
+	m_save_frame_flag = true;
+}
+
+GGCapture::Status GGCapture::status() const
+{
+	return m_status;
 }

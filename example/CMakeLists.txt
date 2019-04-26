@@ -3,7 +3,6 @@ project(ggcapture_example)
 find_package(X11 REQUIRED)
 
 add_executable(${PROJECT_NAME} main.cc)
-
 target_link_directories(
     ${PROJECT_NAME}
     PUBLIC
@@ -11,12 +10,14 @@ target_link_directories(
 target_include_directories(
     ${PROJECT_NAME} 
     PUBLIC 
+	../deps/gginput/src
 )
 target_link_libraries(
     ${PROJECT_NAME} 
 	ggcapture
+	gginput
 )
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
 
 if(WIN32)
 	target_link_libraries(

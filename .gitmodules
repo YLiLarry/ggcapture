@@ -1,6 +1,6 @@
 [submodule "deps/screen_capture_lite"]
 	path = deps/screen_capture_lite
-	url = https://github.com/smasherprog/screen_capture_lite.git
-[submodule "deps/mingw-w64-crt"]
-	path = deps/mingw-w64-crt
-	url = https://github.com/kinke/mingw-w64-crt.git
+	url = https://github.com/YLiLarry/screen_capture_lite.git
+[submodule "deps/gginput"]
+	path = deps/gginput
+	url = https://github.com/YLiLarry/gginput.git

@@ -2,4 +2,4 @@
 a.out
 **/build/
 .vs/
-
+.vscode/

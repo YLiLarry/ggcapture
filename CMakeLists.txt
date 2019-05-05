@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
 project(ggcapture VERSION 1.0)
-find_package(X11 REQUIRED)
 
 option(build_example "build examples?" ON)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -8,6 +7,7 @@ set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_subdirectory(deps/screen_capture_lite)
+
 include_directories(include)
 
 file(GLOB SOURCES src/*.cc)
@@ -15,6 +15,8 @@ file(GLOB HEADERS include/*.h)
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
+# requires std=c++17 for filesystem support
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 install (TARGETS ${PROJECT_NAME}  
 	RUNTIME DESTINATION bin
@@ -37,9 +39,13 @@ target_link_libraries(
     ${PROJECT_NAME} 
     screen_capture_lite 
 )
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 if(WIN32)
+    target_compile_definitions(
+        ${PROJECT_NAME}
+        PUBLIC
+            WIN32=1
+    )
 	target_link_libraries(
 		${PROJECT_NAME} 
 		dwmapi 
@@ -47,22 +53,32 @@ if(WIN32)
 endif(WIN32)
 
 if(APPLE)
+    find_package(X11 REQUIRED)
+    find_package(Boost REQUIRED)
+    # macOS still does not ship with C++17 filesystem header
+    # we need to use boost::filesystem instead
+    target_compile_definitions(
+        ${PROJECT_NAME}
+        PUBLIC
+            APPLE=1
+    )
     target_link_directories(
         ${PROJECT_NAME}
         PUBLIC
-            ${X11_DIR}
+            ${X11_LIBRARY_DIRS}
+            ${Boost_LIBRARY_DIRS}
     )
     target_include_directories(
         ${PROJECT_NAME} 
         PUBLIC 
-            deps/screen_capture_lite/include
-            deps/CImg-2.5.6
             ${X11_INCLUDE_DIR}
+            ${Boost_INCLUDE_DIR}
     )
     target_link_libraries(
         ${PROJECT_NAME} 
         screen_capture_lite 
         ${X11_LIBRARIES}
+        boost_filesystem
         "-framework CoreFoundation"
         "-framework CoreGraphics"
         "-framework ImageIO"
@@ -71,7 +87,6 @@ if(APPLE)
         "-framework AVFoundation"
         "-framework AppKit"
     )
-    target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
 endif(APPLE)
 
 if(build_example)

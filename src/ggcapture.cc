@@ -6,10 +6,18 @@
 using namespace ggcapture;
 using namespace std;
 using namespace cimg_library;
-using namespace filesystem;
 using namespace SL;
 using namespace SL::Screen_Capture;
 using namespace chrono;
+
+#if APPLE
+	using boost::filesystem::path;
+	using boost::filesystem::create_directory;
+	using std::shared_ptr;
+#else
+	using std::filesystem::path;
+	using std::filesystem::create_directory;
+#endif
 
 void GGCapture::setCaptureMode(GGCapture::CaptureMethod mode)
 {
@@ -21,7 +29,8 @@ void GGCapture::setCaptureFps(int fps)
 	m_capture_fps = fps;
 }
 
-void GGCapture::updateWindow()
+#if WIN32
+void GGCapture::updateWindowForDirectXDesktopDuplicationMode()
 {
 	assert(this_thread::get_id() == m_capture_thread_id);
 	RECT rect = { 0 };
@@ -35,15 +44,17 @@ void GGCapture::updateWindow()
 	m_window.Size.x = rect.right - rect.left;
 	m_window.Size.y = rect.bottom - rect.top;
 }
+#endif
 
 void GGCapture::initCaptureConfig()
 {
+#if WIN32
 	if (m_capture_mode == CaptureMethod::DirectXDesktopDuplication) {
-		m_capture_config = SL::Screen_Capture::CreateCaptureConfiguration([]() {
+		m_screen_capture_config = SL::Screen_Capture::CreateCaptureConfiguration([]() {
 			return SL::Screen_Capture::GetMonitors();
 		})->onNewFrame([&](const SL::Screen_Capture::Image& img, auto window) {
 			m_capture_thread_id = this_thread::get_id();
-			updateWindow();
+			updateWindowForDirectXDesktopDuplicationMode();
 			int offset_x = Screen_Capture::OffsetX(m_window);
 			int offset_y = Screen_Capture::OffsetY(m_window);
 			int size_x = Screen_Capture::Width(m_window);
@@ -56,10 +67,10 @@ void GGCapture::initCaptureConfig()
 			offset_y = min(max(offset_y, 0), full_h);
 			end_x = min(max(end_x, 0), full_w);
 			end_y = min(max(end_y, 0), full_h);
-			shared_ptr<CImg<unsigned char>> frame;
+			shared_ptr<CImg<uint8_t>> frame;
 			if (size_x > 0 && size_y > 0) {
-				frame = make_shared<CImg<unsigned char>>(full_w, full_h, 1, 3, 0);
-				CImg<unsigned char>& output = *frame;
+				frame = make_shared<CImg<uint8_t>>(full_w, full_h, 1, 3, 0);
+				CImg<uint8_t>& output = *frame;
 				ImageBGRA const* imgsrc = StartSrc(img);
 				for (int h = 0; h < full_h; h++) {
 					ImageBGRA const* startimgsrc = imgsrc;
@@ -73,16 +84,47 @@ void GGCapture::initCaptureConfig()
 				}
 				frame->crop(offset_x, offset_y, end_x, end_y);
 			} else {
-				frame = make_shared<CImg<unsigned char>>();
+				frame = make_shared<CImg<uint8_t>>();
 			}			
 			newFrameArrived(frame);
 		});
 		return;
 	}
-	assert("Not implemented" && false);
+#endif
+	if (m_capture_mode == CaptureMethod::Window) {
+		m_window_capture_config = SL::Screen_Capture::CreateCaptureConfiguration([&]() {
+			std::vector<SL::Screen_Capture::Window> rtv = { m_window };
+			return rtv;
+		})->onNewFrame([&](const SL::Screen_Capture::Image& img, auto window) {
+			m_capture_thread_id = this_thread::get_id();
+			int full_w = Screen_Capture::Width(img);
+			int full_h = Screen_Capture::Height(img);
+			shared_ptr<CImg<uint8_t>> frame;
+			if (full_w > 0 && full_h > 0) {
+				frame = make_shared<CImg<uint8_t>>(full_w, full_h, 1, 3, 0);
+				CImg<uint8_t>& output = *frame;
+				ImageBGRA const* imgsrc = StartSrc(img);
+				for (int h = 0; h < full_h; h++) {
+					ImageBGRA const* startimgsrc = imgsrc;
+					for (int w = 0; w < full_w; w++) {
+						output(w, h, 0, 0) = imgsrc->R;
+						output(w, h, 0, 1) = imgsrc->G;
+						output(w, h, 0, 2) = imgsrc->B;
+						imgsrc++;
+					}
+					imgsrc = SL::Screen_Capture::GotoNextRow(img, startimgsrc);
+				}
+			} else {
+				frame = make_shared<CImg<uint8_t>>();
+			}	
+			newFrameArrived(frame);
+		});
+		return;
+	} 
+	assert("invaid capture method" && false);
 }
 
-void GGCapture::newFrameArrived(shared_ptr<CImg<unsigned char>> frame)
+void GGCapture::newFrameArrived(shared_ptr<CImg<uint8_t>> frame)
 {
 	/* on capturing thread */
 	if (frame->is_empty()) {
@@ -96,14 +138,16 @@ void GGCapture::newFrameArrived(shared_ptr<CImg<unsigned char>> frame)
 		char s[30];
 		time_t now = std::time(nullptr);
 		std::strftime(s, sizeof(s), "%Y-%m-%d-%H-%M-%S", std::localtime(&now));
-		filesystem::create_directory(m_storage_path);
-		filesystem::path filepath = m_storage_path;
+		create_directory(m_storage_path);
+		path filepath = m_storage_path;
 		filepath /= string(s) + ".bmp";
 		frame->save(filepath.string().c_str());
 		m_save_frame_flag = false;
 	}
-	m_image_display.resize(frame->width(), frame->height());
-	m_image_display.display(*frame);
+	if (! m_image_display.is_closed()) {
+		m_image_display.resize(frame->width() / 2, frame->height() / 2);
+		m_image_display.display(*frame);
+	}
 }
 
 void GGCapture::setWindowTitle(string srchterm)
@@ -129,20 +173,28 @@ void GGCapture::setWindowTitle(string srchterm)
 	}
 }
 
-void GGCapture::start(string srchterm, CaptureMethod mode)
+void GGCapture::start(string srchterm, CaptureMethod mode, int fps)
 {
+	setCaptureFps(fps);
 	setCaptureMode(mode);
 	setWindowTitle(srchterm);
 	initCaptureConfig();
-	m_capture_manager = m_capture_config->start_capturing();
+#if WIN32
+	if (mode == CaptureMethod::DirectXDesktopDuplication) {
+		m_capture_manager = m_screen_capture_config->start_capturing();
+	} 
+#endif
+	if (mode == CaptureMethod::Window) {
+		m_capture_manager = m_window_capture_config->start_capturing();
+	}
 	m_capture_manager->setFrameChangeInterval(chrono::milliseconds(1000 / m_capture_fps));
-	m_status = Status::Capturing;
+	m_status = CaptureStatus::Capturing;
 }
 
 void GGCapture::stop()
 {
 	m_capture_manager->pause();
-	m_status = Status::Stopped;
+	m_status = CaptureStatus::Stopped;
 }
 
 void GGCapture::showFrame()
@@ -150,7 +202,7 @@ void GGCapture::showFrame()
 	m_show_frame_flag = true;
 }
 
-void GGCapture::setStoragePath(filesystem::path path)
+void GGCapture::setStoragePath(path path)
 {
 	m_storage_path = path;
 }
@@ -160,7 +212,7 @@ void GGCapture::saveFrame()
 	m_save_frame_flag = true;
 }
 
-GGCapture::Status GGCapture::status() const
+GGCapture::CaptureStatus GGCapture::status() const
 {
 	return m_status;
 }

@@ -1,8 +1,8 @@
 #include <string>
 #include <ScreenCapture.h>
-#include <CImg.h>
 #include <memory>
 #include <atomic>
+#include <ggframe.h>
 #if APPLE
 #include <boost/filesystem.hpp>
 #else
@@ -45,7 +45,6 @@ namespace ggcapture {
 		string m_window_title; /* capture thread */
 		path m_storage_path = "./data"; /* capture thread */
 		int m_capture_fps; /* capture thread */
-		CImgDisplay m_image_display; /* capture thread only */
 		shared_ptr<ICaptureConfiguration<ScreenCaptureCallback>> m_screen_capture_config; /* capture thread */
 		shared_ptr<ICaptureConfiguration<WindowCaptureCallback>> m_window_capture_config; /* capture thread */
 		shared_ptr<IScreenCaptureManager> m_capture_manager; /* capture thread */
@@ -59,7 +58,7 @@ namespace ggcapture {
 		void updateWindowForDirectXDesktopDuplicationMode(); /* capture thread only */
 #endif
 	protected:
-		virtual void newFrameArrived(shared_ptr<CImg<uint8_t>> frame); /* capture thread only */
+		virtual void newFrameArrived(shared_ptr<ggframe::Frame> frame); /* capture thread only */
 	public:
 		GGCapture() = default;
 		void setStoragePath(path path); /* atomic */

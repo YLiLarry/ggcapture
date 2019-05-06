@@ -7,3 +7,6 @@
 [submodule "deps/boost-cmake"]
 	path = deps/boost-cmake
 	url = https://github.com/Orphis/boost-cmake.git
+[submodule "deps/ggframe"]
+	path = deps/ggframe
+	url = https://github.com/YLiLarry/ggframe.git

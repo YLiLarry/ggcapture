@@ -7,6 +7,7 @@ set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_subdirectory(deps/screen_capture_lite)
+add_subdirectory(deps/ggframe)
 
 include_directories(include)
 
@@ -25,19 +26,17 @@ install (TARGETS ${PROJECT_NAME}
 )
 install(FILES ${HEADERS} DESTINATION include/${PROJECT_NAME})
 
-target_link_directories(
-    ${PROJECT_NAME}
-    PUBLIC
-)
 target_include_directories(
     ${PROJECT_NAME} 
     PUBLIC 
         deps/screen_capture_lite/include
         deps/CImg-2.5.6
+		deps/ggframe/src
 )
 target_link_libraries(
     ${PROJECT_NAME} 
     screen_capture_lite 
+	ggframe
 )
 
 if(WIN32)

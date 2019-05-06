@@ -1,12 +1,14 @@
 #include <iostream>
 #include <thread>
 #include <atomic>
+#include <chrono>
 #include <ggcapture.h>
 #include <gginput.h>
 
 using namespace std;
 using namespace ggcapture;
 using namespace gginput;
+using namespace ggframe;
 
 class CustomInput : public GGInput
 {
@@ -32,16 +34,17 @@ private:
 	atomic<int> m_fps = 0;
 	unique_ptr<thread> m_tick_interval;
 protected:
-	void newFrameArrived(shared_ptr<CImg<unsigned char>> frame) override
+	void newFrameArrived(shared_ptr<ggframe::Frame> frame) override
 	{
 		m_fps++;
+		cerr << "+";
 		GGCapture::newFrameArrived(frame);
 	}
 public:
 	CustomCapture() : GGCapture() { 
 		m_tick_interval = make_unique<thread>([&]() {
 			while(true) {
-				sleep(1);
+				this_thread::sleep_for(chrono::seconds(1));
 				cerr << m_fps << " fps" << endl;
 				m_fps = 0;
 			}
@@ -56,11 +59,13 @@ public:
 int main()
 {
 	CustomCapture ggcapture;
-	GGInput gginput;
+	ggcapture.showFrame();
 #if WIN32
-	ggcapture.start("task manager", GGCapture::DirectXDesktopDuplication, 10);
+	ggcapture.start("task manager", GGCapture::DirectXDesktopDuplication, 60);
 #elif APPLE 
 	ggcapture.start("activity monitor", GGCapture::Window, 10);
 #endif
-	gginput.start();
+	cerr << "press any key to exit" << endl;
+	string in;
+	cin >> in; 
 }

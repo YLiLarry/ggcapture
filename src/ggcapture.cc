@@ -98,15 +98,15 @@ void GGCapture::initCaptureConfig()
 			int full_h = Screen_Capture::Height(img);
 			shared_ptr<Frame> frame;
 			if (full_w > 0 && full_h > 0) {
-				frame = make_shared<Frame>(full_w, full_h, 3);
+				frame = make_shared<Frame>(full_w / m_pixel_density, full_h / m_pixel_density, 3);
 				Frame& output = *frame;
 				ImageBGRA const* imgsrc = StartSrc(img);
 				for (int r = 0; r < full_h; r++) {
 					ImageBGRA const* startimgsrc = imgsrc;
 					for (int c = 0; c < full_w; c++) {
-						frame->set(r, c, 0, imgsrc->R);
-						frame->set(r, c, 1, imgsrc->G);
-						frame->set(r, c, 2, imgsrc->B);
+						frame->set(r / m_pixel_density, c / m_pixel_density, 0, imgsrc->R);
+						frame->set(r / m_pixel_density, c / m_pixel_density, 1, imgsrc->G);
+						frame->set(r / m_pixel_density, c / m_pixel_density, 2, imgsrc->B);
 						imgsrc++;
 					}
 					imgsrc = SL::Screen_Capture::GotoNextRow(img, startimgsrc);
@@ -210,4 +210,14 @@ void GGCapture::saveFrame()
 GGCapture::CaptureStatus GGCapture::status() const
 {
 	return m_status;
+}
+
+void GGCapture::setPixelDensity(float density)
+{
+	m_pixel_density = density;
+}
+
+float GGCapture::pixelDensity() const
+{
+	return m_pixel_density;
 }

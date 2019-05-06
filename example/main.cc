@@ -63,7 +63,7 @@ int main()
 #if WIN32
 	ggcapture.start("task manager", GGCapture::DirectXDesktopDuplication, 60);
 #elif APPLE 
-	ggcapture.start("activity monitor", GGCapture::Window, 10);
+	ggcapture.start("activity monitor", GGCapture::Window, 30);
 #endif
 	cerr << "press any key to exit" << endl;
 	string in;

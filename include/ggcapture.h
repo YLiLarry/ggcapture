@@ -50,6 +50,12 @@ namespace ggcapture {
 		shared_ptr<IScreenCaptureManager> m_capture_manager; /* capture thread */
 		Screen_Capture::Window m_window;  /* capture thread only */
 
+#if APPLE
+		atomic<float> m_pixel_density = 2; /* capture thread */
+#else
+		atomic<float> m_pixel_density = 1; /* capture thread */
+#endif
+
 		void setWindowTitle(string srchterm); /* capture thread */
 		void setCaptureMode(CaptureMethod mode); /* capture thread */
 		void initCaptureConfig(); /* capture thread */
@@ -59,8 +65,11 @@ namespace ggcapture {
 #endif
 	protected:
 		virtual void newFrameArrived(shared_ptr<ggframe::Frame> frame); /* capture thread only */
+		
 	public:
 		GGCapture() = default;
+		float pixelDensity() const;
+		void setPixelDensity(float density);
 		void setStoragePath(path path); /* atomic */
 		void start(string srchterm, CaptureMethod mode, int fps); /* atomic */
 		void stop(); /* atomic */

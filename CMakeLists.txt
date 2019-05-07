@@ -42,26 +42,6 @@ target_link_libraries(
 	ggframe
 )
 
-if(WIN32)
-    target_compile_definitions(
-        ${PROJECT_NAME}
-        PUBLIC
-            WIN32=1
-    )
-	target_link_libraries(
-		${PROJECT_NAME} 
-		dwmapi 
-	)
-endif(WIN32)
-
-if(APPLE)
-    target_compile_definitions(
-        ${PROJECT_NAME}
-        PUBLIC
-            APPLE=1
-    )
-endif(APPLE)
-
 if(build_ggcapture_example)
 	add_subdirectory(example)
 endif(build_ggcapture_example)

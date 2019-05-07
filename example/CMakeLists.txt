@@ -7,10 +7,3 @@ target_link_libraries(
     ${PROJECT_NAME} 
 	ggcapture
 )
-
-if(WIN32)
-	target_link_libraries(
-		${PROJECT_NAME} 
-		dwmapi 
-	)
-endif(WIN32)

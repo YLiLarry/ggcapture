@@ -1,4 +1,4 @@
-#include "ggcapture.h"
+#include <ggcapture.h>
 #include <iostream>
 #include <sstream>
 #include <iomanip>

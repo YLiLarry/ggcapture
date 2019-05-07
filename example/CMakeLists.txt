@@ -5,5 +5,5 @@ add_executable(${PROJECT_NAME} ggcapture_example.cc)
 
 target_link_libraries(
     ${PROJECT_NAME} 
-	ggcapture
+    ggcapture
 )

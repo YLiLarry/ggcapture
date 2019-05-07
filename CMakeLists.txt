@@ -21,9 +21,9 @@ add_library(${PROJECT_NAME} STATIC ${SOURCES})
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 install (TARGETS ${PROJECT_NAME}  
-	RUNTIME DESTINATION bin
-	ARCHIVE DESTINATION lib
-	LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
 )
 
 install(FILES ${HEADERS} DESTINATION include/${PROJECT_NAME})
@@ -33,15 +33,15 @@ target_include_directories(
     PUBLIC 
         include
         deps/screen_capture_lite/include
-		deps/ggframe/include
+        deps/ggframe/include
 )
 
 target_link_libraries(
     ${PROJECT_NAME} 
     screen_capture_lite 
-	ggframe
+    ggframe
 )
 
 if(build_ggcapture_example)
-	add_subdirectory(example)
+    add_subdirectory(example)
 endif(build_ggcapture_example)

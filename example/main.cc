@@ -3,30 +3,10 @@
 #include <atomic>
 #include <chrono>
 #include <ggcapture.h>
-#include <gginput.h>
 
 using namespace std;
 using namespace ggcapture;
-using namespace gginput;
 using namespace ggframe;
-
-class CustomInput : public GGInput
-{
-	GGCapture* m_ggcapture;
-public:
-	CustomInput(GGCapture* ggcapture)
-		: m_ggcapture(ggcapture)
-	{
-	}
-	virtual void handleKeyDown(GGInputKey key) override
-	{
-		cerr << "key pressed: " << key.keyCode << endl;
-		if (key.keyCode == 112) {
-			GGInput::handleKeyDown(key);
-			m_ggcapture->saveFrame();
-		}
-	}
-};
 
 class CustomCapture : public GGCapture
 {

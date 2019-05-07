@@ -14,7 +14,6 @@ target_include_directories(
 target_link_libraries(
     ${PROJECT_NAME} 
 	ggcapture
-	gginput
 )
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
 

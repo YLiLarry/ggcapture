@@ -1,9 +1,6 @@
 [submodule "deps/screen_capture_lite"]
 	path = deps/screen_capture_lite
 	url = https://github.com/smasherprog/screen_capture_lite.git
-[submodule "deps/gginput"]
-	path = deps/gginput
-	url = https://github.com/YLiLarry/gginput.git
 [submodule "deps/boost-cmake"]
 	path = deps/boost-cmake
 	url = https://github.com/Orphis/boost-cmake.git

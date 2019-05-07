@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.8)
 project(ggcapture VERSION 1.0)
 
-option(build_example "build examples?" ON)
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+option(ggcapture_build_example "build examples?" ON)
 
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+set(BUILD_EXAMPLE OFF) # disable example for screen_capture_lite
 add_subdirectory(deps/screen_capture_lite)
 add_subdirectory(deps/ggframe)
 
@@ -87,7 +89,6 @@ if(APPLE)
     )
 endif(APPLE)
 
-if(build_example)
-	add_subdirectory(deps/gginput)
+if(ggcapture_build_example)
 	add_subdirectory(example)
-endif(build_example)
+endif(ggcapture_build_example)

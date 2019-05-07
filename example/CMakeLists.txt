@@ -10,7 +10,6 @@ target_link_directories(
 target_include_directories(
     ${PROJECT_NAME} 
     PUBLIC 
-	../deps/gginput/src
 )
 target_link_libraries(
     ${PROJECT_NAME} 

@@ -59,12 +59,12 @@ public:
 int main()
 {
 	CustomCapture ggcapture;
-	ggcapture.showFrame();
 #if WIN32
 	ggcapture.start("task manager", GGCapture::DirectXDesktopDuplication, 60);
 #elif APPLE 
 	ggcapture.start("activity monitor", GGCapture::Window, 30);
 #endif
+	ggcapture.showFrame();
 	cerr << "press any key to exit" << endl;
 	string in;
 	cin >> in; 

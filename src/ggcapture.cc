@@ -3,6 +3,11 @@
 #include <sstream>
 #include <iomanip>
 #include <vector>
+#include <queue>
+
+#if WIN32
+#include <Windows.h>
+#endif
 
 using namespace ggcapture;
 using namespace ggframe;
@@ -10,6 +15,7 @@ using namespace std;
 using namespace SL;
 using namespace SL::Screen_Capture;
 using namespace chrono;
+using ggframe::Frame;	
 
 #if APPLE
 	using boost::filesystem::path;
@@ -66,18 +72,9 @@ void GGCapture::initCaptureConfig()
 			int full_w = Screen_Capture::Width(img);
 			shared_ptr<Frame> frame;
 			if (width > 0 && height > 0) {
-				frame = make_shared<Frame>(full_w, full_h, 3);
-				ImageBGRA const* imgsrc = StartSrc(img);
-				for (int r = 0; r < full_h; r++) {
-					ImageBGRA const* startimgsrc = imgsrc;
-					for (int c = 0; c < full_w; c++) {
-						frame->set(r, c, 0, imgsrc->R);
-						frame->set(r, c, 1, imgsrc->G);
-						frame->set(r, c, 2, imgsrc->B);
-						imgsrc++;
-					}
-					imgsrc = SL::Screen_Capture::GotoNextRow(img, startimgsrc);
-				}
+				frame = make_shared<Frame>(full_h, full_w);
+				size_t size = sizeof(CV_8UC4) * frame->nCols() * frame->nRows();
+				Screen_Capture::Extract(img, frame->data(), size);
 				ggframe::Rec rec(top, left, width, height);
 				frame->crop(rec);
 			} else {
@@ -98,19 +95,9 @@ void GGCapture::initCaptureConfig()
 			int full_h = Screen_Capture::Height(img);
 			shared_ptr<Frame> frame;
 			if (full_w > 0 && full_h > 0) {
-				frame = make_shared<Frame>(full_w / m_pixel_density, full_h / m_pixel_density, 3);
-				Frame& output = *frame;
-				ImageBGRA const* imgsrc = StartSrc(img);
-				for (int r = 0; r < full_h; r++) {
-					ImageBGRA const* startimgsrc = imgsrc;
-					for (int c = 0; c < full_w; c++) {
-						frame->set(r / m_pixel_density, c / m_pixel_density, 0, imgsrc->R);
-						frame->set(r / m_pixel_density, c / m_pixel_density, 1, imgsrc->G);
-						frame->set(r / m_pixel_density, c / m_pixel_density, 2, imgsrc->B);
-						imgsrc++;
-					}
-					imgsrc = SL::Screen_Capture::GotoNextRow(img, startimgsrc);
-				}
+				frame = make_shared<Frame>(full_h, full_w);
+				size_t size = sizeof(CV_8UC4) * frame->nCols() * frame->nRows();
+				Screen_Capture::Extract(img, frame->data(), size);
 			} else {
 				frame = make_shared<Frame>();
 			}	
@@ -128,10 +115,7 @@ void GGCapture::newFrameArrived(shared_ptr<Frame> frame)
 		return;
 	}
 	if (m_show_frame_flag) {
-		frame->display();
-		//if (m_image_display.is_closed()) {
-			//m_show_frame_flag = false;
-		//}
+		pushFrameQueue(frame);
 	}
 	if (m_save_frame_flag) {
 		char s[30];
@@ -195,6 +179,33 @@ void GGCapture::stop()
 void GGCapture::showFrame()
 {
 	m_show_frame_flag = true;
+	while(true) {
+		shared_ptr<Frame> frame = removeFrameQueue();
+		if (! frame->empty()) {
+			frame->display();
+		}
+	}
+}
+
+void GGCapture::pushFrameQueue(shared_ptr<Frame> frame)
+{
+	m_frame_queue_mutex.lock();
+	m_frame_queue.push(frame);
+	m_frame_queue_mutex.unlock();
+}
+
+shared_ptr<Frame> GGCapture::removeFrameQueue()
+{
+	shared_ptr<Frame> frame;
+	m_frame_queue_mutex.lock();
+	if (m_frame_queue.empty()) {
+		frame = make_shared<Frame>();
+	} else {
+		frame = m_frame_queue.front();
+		m_frame_queue.pop();
+	}
+	m_frame_queue_mutex.unlock();
+	return frame;
 }
 
 void GGCapture::setStoragePath(path path)

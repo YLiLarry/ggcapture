@@ -30,8 +30,7 @@ target_include_directories(
     ${PROJECT_NAME} 
     PUBLIC 
         deps/screen_capture_lite/include
-        deps/CImg-2.5.6
-		deps/ggframe/src
+		deps/ggframe/include
 )
 target_link_libraries(
     ${PROJECT_NAME} 

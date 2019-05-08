@@ -75,8 +75,8 @@ void GGCapture::initCaptureConfig()
 				frame = make_shared<Frame>(full_h, full_w);
 				size_t size = sizeof(CV_8UC4) * frame->nCols() * frame->nRows();
 				Screen_Capture::Extract(img, frame->data(), size);
-				ggframe::Rec rec(top, left, width, height);
-				frame->crop(rec);
+                Rec crop_rec = Rec::tlbr(top, left, top + height - 1, left + width - 1);
+				frame->crop(frame->frameRec().intersect(crop_rec));
 			} else {
 				frame = make_shared<Frame>();
 			}			
